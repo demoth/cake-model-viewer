@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.g3d.Material
 import com.badlogic.gdx.graphics.g3d.ModelBatch
 import com.badlogic.gdx.graphics.g3d.ModelInstance
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute
+import com.badlogic.gdx.graphics.g3d.loader.ObjLoader
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder
 
@@ -19,7 +20,7 @@ class Cake : ApplicationAdapter() {
     private lateinit var image: Texture
     private lateinit var modelBatch: ModelBatch
     private lateinit var camera: Camera
-    private lateinit var modelInstance: ModelInstance
+    private lateinit var models: MutableList<ModelInstance>
     private lateinit var environment: Environment
 
     override fun create() {
@@ -41,15 +42,22 @@ class Cake : ApplicationAdapter() {
             Material(ColorAttribute.createDiffuse(Color.BLUE)),
             (VertexAttributes.Usage.Position or VertexAttributes.Usage.Normal).toLong()
         )
-        modelInstance = ModelInstance(box)
+        models = mutableListOf()
+        models.add(ModelInstance(box))
+
+        val suzanneModel = ObjLoader().loadModel(Gdx.files.internal("suzanne.obj"))
+        val modelInstance = ModelInstance(suzanneModel)
+        modelInstance.transform.translate(0f, 2f, 0f)
+        models.add(modelInstance)
+
         environment = Environment()
         environment.set(ColorAttribute(ColorAttribute.AmbientLight, 0.8f, 0.8f, 0.8f, 1f))
-
     }
 
     override fun render() {
         Gdx.gl.glClearColor(0.15f, 0.15f, 0.2f, 1f)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT or GL20.GL_DEPTH_BUFFER_BIT)
+
         batch.begin()
         batch.draw(image, 140f, 210f)
         batch.end()
@@ -57,7 +65,9 @@ class Cake : ApplicationAdapter() {
         camera.update();
 
         modelBatch.begin(camera)
-        modelBatch.render(modelInstance, environment)
+        models.forEach {
+            modelBatch.render(it, environment)
+        }
         modelBatch.end()
     }
 
