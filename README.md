@@ -1,4 +1,6 @@
-# cake-engine
+# Cake Model viewer
+
+A small project for experimenting with 3d models and shaders in libGDX
 
 A [libGDX](https://libgdx.com/) project generated with [gdx-liftoff](https://github.com/libgdx/gdx-liftoff).
 
@@ -23,8 +25,6 @@ Useful Gradle tasks and flags:
 - `cleanEclipse`: removes Eclipse project data.
 - `cleanIdea`: removes IntelliJ project data.
 - `clean`: removes `build` folders, which store compiled classes and built archives.
-- `eclipse`: generates Eclipse project data.
-- `idea`: generates IntelliJ project data.
 - `lwjgl3:jar`: builds application's runnable jar, which can be found at `lwjgl3/build/lib`.
 - `lwjgl3:run`: starts the application.
 - `test`: runs unit tests (if any).

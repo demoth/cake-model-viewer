@@ -15,7 +15,7 @@ import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder
 
 
 /** [com.badlogic.gdx.ApplicationListener] implementation shared by all platforms.  */
-class Cake : ApplicationAdapter() {
+class CakeModelViewer : ApplicationAdapter() {
     private lateinit var batch: SpriteBatch
     private lateinit var image: Texture
     private lateinit var modelBatch: ModelBatch
