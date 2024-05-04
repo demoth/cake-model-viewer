@@ -14,6 +14,7 @@ import com.badlogic.gdx.graphics.g3d.loader.ObjLoader
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder
 import com.badlogic.gdx.utils.UBJsonReader
+import ktx.graphics.use
 
 
 /** [com.badlogic.gdx.ApplicationListener] implementation shared by all platforms.  */
@@ -65,9 +66,9 @@ class CakeModelViewer : ApplicationAdapter() {
         Gdx.gl.glClearColor(0.15f, 0.15f, 0.2f, 1f)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT or GL20.GL_DEPTH_BUFFER_BIT)
 
-        batch.begin()
-        batch.draw(image, 140f, 210f)
-        batch.end()
+        batch.use {
+            it.draw(image, 140f, 210f)
+        }
 
         camera.update();
 
