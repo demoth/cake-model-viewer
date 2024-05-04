@@ -4,10 +4,7 @@ import com.badlogic.gdx.ApplicationAdapter
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.*
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
-import com.badlogic.gdx.graphics.g3d.Environment
-import com.badlogic.gdx.graphics.g3d.Material
-import com.badlogic.gdx.graphics.g3d.ModelBatch
-import com.badlogic.gdx.graphics.g3d.ModelInstance
+import com.badlogic.gdx.graphics.g3d.*
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute
 import com.badlogic.gdx.graphics.g3d.loader.G3dModelLoader
 import com.badlogic.gdx.graphics.g3d.loader.ObjLoader
@@ -37,29 +34,49 @@ class CakeModelViewer : ApplicationAdapter() {
         camera.far = 300f;
 
         Gdx.input.inputProcessor = CameraInputController(camera)
-        models = mutableListOf()
         modelBatch = ModelBatch()
+        models = mutableListOf(
+            ModelInstance(createModel()),
+            loadObjModel(),
+            loadG3dModel()
+        )
+
+        environment = Environment()
+        environment.set(ColorAttribute(ColorAttribute.AmbientLight, 0.8f, 0.8f, 0.8f, 1f))
+    }
+
+    /**
+     * Create a model programmatically using the model builder
+     */
+    private fun createModel(): Model {
         val modelBuilder = ModelBuilder()
         val box = modelBuilder.createBox(
             2f, 2f, 2f,
             Material(ColorAttribute.createDiffuse(Color.BLUE)),
             (VertexAttributes.Usage.Position or VertexAttributes.Usage.Normal).toLong()
         )
-        models.add(ModelInstance(box))
+        return box
+    }
 
+    /**
+     * Load an .obj model. todo: try using a material
+     */
+    private fun loadObjModel(): ModelInstance {
         val suzanneModel = ObjLoader().loadModel(Gdx.files.internal("suzanne.obj"))
         val suzanne = ModelInstance(suzanneModel)
         suzanne.transform.translate(0f, 2f, 0f)
-        models.add(suzanne)
+        return suzanne
+    }
 
+    /**
+     * Load an .g3d model, created with the fbx-conv app from an .fbx file
+     */
+    private fun loadG3dModel(): ModelInstance {
         val crateModel = G3dModelLoader(UBJsonReader()).loadModel(Gdx.files.internal("crate-wooden.g3db"))
         val crateInstance = ModelInstance(crateModel)
         crateInstance.transform.translate(0f, -2f, 0f)
         crateInstance.transform.scale(0.01f, 0.01f, 0.01f)
-        models.add(crateInstance)
-
-        environment = Environment()
-        environment.set(ColorAttribute(ColorAttribute.AmbientLight, 0.8f, 0.8f, 0.8f, 1f))
+        return crateInstance
     }
 
     override fun render() {
@@ -82,6 +99,7 @@ class CakeModelViewer : ApplicationAdapter() {
     override fun dispose() {
         batch.dispose()
         image.dispose()
+        models.forEach { it.model.dispose() }
         modelBatch.dispose()
     }
 }
