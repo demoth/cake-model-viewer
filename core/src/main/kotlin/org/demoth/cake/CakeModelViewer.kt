@@ -9,9 +9,11 @@ import com.badlogic.gdx.graphics.g3d.Material
 import com.badlogic.gdx.graphics.g3d.ModelBatch
 import com.badlogic.gdx.graphics.g3d.ModelInstance
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute
+import com.badlogic.gdx.graphics.g3d.loader.G3dModelLoader
 import com.badlogic.gdx.graphics.g3d.loader.ObjLoader
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder
+import com.badlogic.gdx.utils.UBJsonReader
 
 
 /** [com.badlogic.gdx.ApplicationListener] implementation shared by all platforms.  */
@@ -34,7 +36,7 @@ class CakeModelViewer : ApplicationAdapter() {
         camera.far = 300f;
 
         Gdx.input.inputProcessor = CameraInputController(camera)
-
+        models = mutableListOf()
         modelBatch = ModelBatch()
         val modelBuilder = ModelBuilder()
         val box = modelBuilder.createBox(
@@ -42,13 +44,18 @@ class CakeModelViewer : ApplicationAdapter() {
             Material(ColorAttribute.createDiffuse(Color.BLUE)),
             (VertexAttributes.Usage.Position or VertexAttributes.Usage.Normal).toLong()
         )
-        models = mutableListOf()
         models.add(ModelInstance(box))
 
         val suzanneModel = ObjLoader().loadModel(Gdx.files.internal("suzanne.obj"))
-        val modelInstance = ModelInstance(suzanneModel)
-        modelInstance.transform.translate(0f, 2f, 0f)
-        models.add(modelInstance)
+        val suzanne = ModelInstance(suzanneModel)
+        suzanne.transform.translate(0f, 2f, 0f)
+        models.add(suzanne)
+
+        val crateModel = G3dModelLoader(UBJsonReader()).loadModel(Gdx.files.internal("crate-wooden.g3db"))
+        val crateInstance = ModelInstance(crateModel)
+        crateInstance.transform.translate(0f, -2f, 0f)
+        crateInstance.transform.scale(0.01f, 0.01f, 0.01f)
+        models.add(crateInstance)
 
         environment = Environment()
         environment.set(ColorAttribute(ColorAttribute.AmbientLight, 0.8f, 0.8f, 0.8f, 1f))
