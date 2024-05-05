@@ -3,16 +3,16 @@ package org.demoth.cake
 import com.badlogic.gdx.ApplicationAdapter
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.*
-import com.badlogic.gdx.graphics.GL20.GL_LINE_STRIP
 import com.badlogic.gdx.graphics.GL20.GL_TRIANGLES
+import com.badlogic.gdx.graphics.VertexAttributes.Usage
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g3d.*
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute
 import com.badlogic.gdx.graphics.g3d.loader.G3dModelLoader
 import com.badlogic.gdx.graphics.g3d.loader.ObjLoader
+import com.badlogic.gdx.graphics.g3d.model.Node
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController
 import com.badlogic.gdx.graphics.g3d.utils.MeshBuilder
-import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder
 import com.badlogic.gdx.utils.UBJsonReader
 import ktx.graphics.use
@@ -45,7 +45,8 @@ class CakeModelViewer : ApplicationAdapter() {
 //            ModelInstance(createModel()),
 //            loadObjModel(),
 //            loadG3dModel(),
-            loadMd2Model() // fixme: nothing is rendered.. :(
+//            loadMeshModel(),
+            loadMd2Model()
         )
 
         environment = Environment()
@@ -60,7 +61,7 @@ class CakeModelViewer : ApplicationAdapter() {
         val box = modelBuilder.createBox(
             2f, 2f, 2f,
             Material(ColorAttribute.createDiffuse(Color.BLUE)),
-            (VertexAttributes.Usage.Position or VertexAttributes.Usage.Normal).toLong()
+            (Usage.Position or Usage.Normal).toLong()
         )
         return box
     }
@@ -73,6 +74,23 @@ class CakeModelViewer : ApplicationAdapter() {
         val suzanne = ModelInstance(suzanneModel)
         suzanne.transform.translate(0f, 2f, 0f)
         return suzanne
+    }
+
+    /**
+     * Example of building the model with the mesh builder class (from geometric shapes)
+     */
+    private fun loadMeshModel(): ModelInstance {
+        val modelBuilder = ModelBuilder()
+        modelBuilder.begin()
+        var meshBuilder =
+            modelBuilder.part("part1", GL_TRIANGLES, (Usage.Position or Usage.Normal).toLong(), Material())
+        meshBuilder.cone(5f, 5f, 5f, 10)
+        val node: Node = modelBuilder.node()
+        node.translation.set(10f, 0f, 0f)
+        meshBuilder = modelBuilder.part("part2", GL_TRIANGLES, (Usage.Position or Usage.Normal).toLong(), Material())
+        meshBuilder.sphere(5f, 5f, 5f, 10, 10)
+        val model = modelBuilder.end()
+        return ModelInstance(model)
     }
 
     /**
@@ -91,22 +109,14 @@ class CakeModelViewer : ApplicationAdapter() {
 
         // put all vertices of the 1st frame into the buffer
         val frame = md2Model.frames.first()!!
-        val vertexBuffer = frame.points.flatMap { listOf(it.x * frame.scale[0], it.y * frame.scale[1], it.z * frame.scale[2]) }.toFloatArray()
-
+        val vertexBuffer = frame.points.flatMap { listOf(it.x * frame.scale[0], it.z * frame.scale[2], it.y * frame.scale[1]) }.toFloatArray()
         val vertexIndices: ShortArray = createVertexIndices(md2Model, frame)
-
-        val meshBuilder = MeshBuilder()
-        meshBuilder.begin(VertexAttributes(VertexAttribute.Position()), GL_TRIANGLES)
+        val modelBuilder = ModelBuilder()
+        modelBuilder.begin()
+        val meshBuilder = modelBuilder.part("part1", GL_TRIANGLES, Usage.Position.toLong(), Material(ColorAttribute.createDiffuse(Color.GREEN)))
         meshBuilder.addMesh(vertexBuffer, vertexIndices)
-        val mesh = meshBuilder.end()
-        // create a model from the created mesh
-        val model = Model()
-        model.materials.add(Material(ColorAttribute.createEmissive(Color.GREEN)))
-        model.meshes.add(mesh)
-        val modelInstance = ModelInstance(model)
-        modelInstance.transform.translate(2f, 0f, 0f)
-        modelInstance.transform.scale(0.05f, 0.05f, 0.05f)
-        return modelInstance
+        val model = modelBuilder.end()
+        return ModelInstance(model)
     }
 
     private fun createVertexIndices(model: Md2Model, frame: Md2Frame): ShortArray {
