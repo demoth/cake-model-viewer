@@ -1,15 +1,13 @@
 package org.demoth.cake
 
 import java.nio.ByteBuffer
-import java.nio.FloatBuffer
-import java.nio.IntBuffer
 
 /**
  * daliasframe_t
  * A frame in the MD2 model
  */
 
-data class Point(val x: Int, val y: Int, val z: Int)
+data class Point(val x: Int, val y: Int, val z: Int, val normalIndex: Int)
 
 class Md2Frame(buffer: ByteBuffer, num_xyz: Int) {
     var scale = floatArrayOf(0f, 0f, 0f) // multiply byte verts by this
@@ -32,7 +30,7 @@ class Md2Frame(buffer: ByteBuffer, num_xyz: Int) {
 
         // vertices are all 8 bit, so no swapping needed
         verts = IntArray(num_xyz)
-        points = Array(num_xyz) { Point(0, 0, 0) }
+        points = Array(num_xyz) { Point(0, 0, 0, 0) }
 
 
         for (k in 0 until num_xyz) {
@@ -41,6 +39,7 @@ class Md2Frame(buffer: ByteBuffer, num_xyz: Int) {
                 verts[k] ushr 0 and 0xFF,
                 verts[k] ushr 8 and 0xFF,
                 verts[k] ushr 16 and 0xFF,
+                verts[k] ushr 24 and 0xFF
             )
         }
     }
@@ -153,6 +152,171 @@ class Md2Model(b: ByteBuffer) {
             }
         }
     }
-
 }
+
+val VERTEXNORMALS: Array<FloatArray> = arrayOf(
+    floatArrayOf(-0.525731f, 0.000000f, 0.850651f),
+    floatArrayOf(-0.442863f, 0.238856f, 0.864188f),
+    floatArrayOf(-0.295242f, 0.000000f, 0.955423f),
+    floatArrayOf(-0.309017f, 0.500000f, 0.809017f),
+    floatArrayOf(-0.162460f, 0.262866f, 0.951056f),
+    floatArrayOf(0.000000f, 0.000000f, 1.000000f),
+    floatArrayOf(0.000000f, 0.850651f, 0.525731f),
+    floatArrayOf(-0.147621f, 0.716567f, 0.681718f),
+    floatArrayOf(0.147621f, 0.716567f, 0.681718f),
+    floatArrayOf(0.000000f, 0.525731f, 0.850651f),
+    floatArrayOf(0.309017f, 0.500000f, 0.809017f),
+    floatArrayOf(0.525731f, 0.000000f, 0.850651f),
+    floatArrayOf(0.295242f, 0.000000f, 0.955423f),
+    floatArrayOf(0.442863f, 0.238856f, 0.864188f),
+    floatArrayOf(0.162460f, 0.262866f, 0.951056f),
+    floatArrayOf(-0.681718f, 0.147621f, 0.716567f),
+    floatArrayOf(-0.809017f, 0.309017f, 0.500000f),
+    floatArrayOf(-0.587785f, 0.425325f, 0.688191f),
+    floatArrayOf(-0.850651f, 0.525731f, 0.000000f),
+    floatArrayOf(-0.864188f, 0.442863f, 0.238856f),
+    floatArrayOf(-0.716567f, 0.681718f, 0.147621f),
+    floatArrayOf(-0.688191f, 0.587785f, 0.425325f),
+    floatArrayOf(-0.500000f, 0.809017f, 0.309017f),
+    floatArrayOf(-0.238856f, 0.864188f, 0.442863f),
+    floatArrayOf(-0.425325f, 0.688191f, 0.587785f),
+    floatArrayOf(-0.716567f, 0.681718f, -0.147621f),
+    floatArrayOf(-0.500000f, 0.809017f, -0.309017f),
+    floatArrayOf(-0.525731f, 0.850651f, 0.000000f),
+    floatArrayOf(0.000000f, 0.850651f, -0.525731f),
+    floatArrayOf(-0.238856f, 0.864188f, -0.442863f),
+    floatArrayOf(0.000000f, 0.955423f, -0.295242f),
+    floatArrayOf(-0.262866f, 0.951056f, -0.162460f),
+    floatArrayOf(0.000000f, 1.000000f, 0.000000f),
+    floatArrayOf(0.000000f, 0.955423f, 0.295242f),
+    floatArrayOf(-0.262866f, 0.951056f, 0.162460f),
+    floatArrayOf(0.238856f, 0.864188f, 0.442863f),
+    floatArrayOf(0.262866f, 0.951056f, 0.162460f),
+    floatArrayOf(0.500000f, 0.809017f, 0.309017f),
+    floatArrayOf(0.238856f, 0.864188f, -0.442863f),
+    floatArrayOf(0.262866f, 0.951056f, -0.162460f),
+    floatArrayOf(0.500000f, 0.809017f, -0.309017f),
+    floatArrayOf(0.850651f, 0.525731f, 0.000000f),
+    floatArrayOf(0.716567f, 0.681718f, 0.147621f),
+    floatArrayOf(0.716567f, 0.681718f, -0.147621f),
+    floatArrayOf(0.525731f, 0.850651f, 0.000000f),
+    floatArrayOf(0.425325f, 0.688191f, 0.587785f),
+    floatArrayOf(0.864188f, 0.442863f, 0.238856f),
+    floatArrayOf(0.688191f, 0.587785f, 0.425325f),
+    floatArrayOf(0.809017f, 0.309017f, 0.500000f),
+    floatArrayOf(0.681718f, 0.147621f, 0.716567f),
+    floatArrayOf(0.587785f, 0.425325f, 0.688191f),
+    floatArrayOf(0.955423f, 0.295242f, 0.000000f),
+    floatArrayOf(1.000000f, 0.000000f, 0.000000f),
+    floatArrayOf(0.951056f, 0.162460f, 0.262866f),
+    floatArrayOf(0.850651f, -0.525731f, 0.000000f),
+    floatArrayOf(0.955423f, -0.295242f, 0.000000f),
+    floatArrayOf(0.864188f, -0.442863f, 0.238856f),
+    floatArrayOf(0.951056f, -0.162460f, 0.262866f),
+    floatArrayOf(0.809017f, -0.309017f, 0.500000f),
+    floatArrayOf(0.681718f, -0.147621f, 0.716567f),
+    floatArrayOf(0.850651f, 0.000000f, 0.525731f),
+    floatArrayOf(0.864188f, 0.442863f, -0.238856f),
+    floatArrayOf(0.809017f, 0.309017f, -0.500000f),
+    floatArrayOf(0.951056f, 0.162460f, -0.262866f),
+    floatArrayOf(0.525731f, 0.000000f, -0.850651f),
+    floatArrayOf(0.681718f, 0.147621f, -0.716567f),
+    floatArrayOf(0.681718f, -0.147621f, -0.716567f),
+    floatArrayOf(0.850651f, 0.000000f, -0.525731f),
+    floatArrayOf(0.809017f, -0.309017f, -0.500000f),
+    floatArrayOf(0.864188f, -0.442863f, -0.238856f),
+    floatArrayOf(0.951056f, -0.162460f, -0.262866f),
+    floatArrayOf(0.147621f, 0.716567f, -0.681718f),
+    floatArrayOf(0.309017f, 0.500000f, -0.809017f),
+    floatArrayOf(0.425325f, 0.688191f, -0.587785f),
+    floatArrayOf(0.442863f, 0.238856f, -0.864188f),
+    floatArrayOf(0.587785f, 0.425325f, -0.688191f),
+    floatArrayOf(0.688191f, 0.587785f, -0.425325f),
+    floatArrayOf(-0.147621f, 0.716567f, -0.681718f),
+    floatArrayOf(-0.309017f, 0.500000f, -0.809017f),
+    floatArrayOf(0.000000f, 0.525731f, -0.850651f),
+    floatArrayOf(-0.525731f, 0.000000f, -0.850651f),
+    floatArrayOf(-0.442863f, 0.238856f, -0.864188f),
+    floatArrayOf(-0.295242f, 0.000000f, -0.955423f),
+    floatArrayOf(-0.162460f, 0.262866f, -0.951056f),
+    floatArrayOf(0.000000f, 0.000000f, -1.000000f),
+    floatArrayOf(0.295242f, 0.000000f, -0.955423f),
+    floatArrayOf(0.162460f, 0.262866f, -0.951056f),
+    floatArrayOf(-0.442863f, -0.238856f, -0.864188f),
+    floatArrayOf(-0.309017f, -0.500000f, -0.809017f),
+    floatArrayOf(-0.162460f, -0.262866f, -0.951056f),
+    floatArrayOf(0.000000f, -0.850651f, -0.525731f),
+    floatArrayOf(-0.147621f, -0.716567f, -0.681718f),
+    floatArrayOf(0.147621f, -0.716567f, -0.681718f),
+    floatArrayOf(0.000000f, -0.525731f, -0.850651f),
+    floatArrayOf(0.309017f, -0.500000f, -0.809017f),
+    floatArrayOf(0.442863f, -0.238856f, -0.864188f),
+    floatArrayOf(0.162460f, -0.262866f, -0.951056f),
+    floatArrayOf(0.238856f, -0.864188f, -0.442863f),
+    floatArrayOf(0.500000f, -0.809017f, -0.309017f),
+    floatArrayOf(0.425325f, -0.688191f, -0.587785f),
+    floatArrayOf(0.716567f, -0.681718f, -0.147621f),
+    floatArrayOf(0.688191f, -0.587785f, -0.425325f),
+    floatArrayOf(0.587785f, -0.425325f, -0.688191f),
+    floatArrayOf(0.000000f, -0.955423f, -0.295242f),
+    floatArrayOf(0.000000f, -1.000000f, 0.000000f),
+    floatArrayOf(0.262866f, -0.951056f, -0.162460f),
+    floatArrayOf(0.000000f, -0.850651f, 0.525731f),
+    floatArrayOf(0.000000f, -0.955423f, 0.295242f),
+    floatArrayOf(0.238856f, -0.864188f, 0.442863f),
+    floatArrayOf(0.262866f, -0.951056f, 0.162460f),
+    floatArrayOf(0.500000f, -0.809017f, 0.309017f),
+    floatArrayOf(0.716567f, -0.681718f, 0.147621f),
+    floatArrayOf(0.525731f, -0.850651f, 0.000000f),
+    floatArrayOf(-0.238856f, -0.864188f, -0.442863f),
+    floatArrayOf(-0.500000f, -0.809017f, -0.309017f),
+    floatArrayOf(-0.262866f, -0.951056f, -0.162460f),
+    floatArrayOf(-0.850651f, -0.525731f, 0.000000f),
+    floatArrayOf(-0.716567f, -0.681718f, -0.147621f),
+    floatArrayOf(-0.716567f, -0.681718f, 0.147621f),
+    floatArrayOf(-0.525731f, -0.850651f, 0.000000f),
+    floatArrayOf(-0.500000f, -0.809017f, 0.309017f),
+    floatArrayOf(-0.238856f, -0.864188f, 0.442863f),
+    floatArrayOf(-0.262866f, -0.951056f, 0.162460f),
+    floatArrayOf(-0.864188f, -0.442863f, 0.238856f),
+    floatArrayOf(-0.809017f, -0.309017f, 0.500000f),
+    floatArrayOf(-0.688191f, -0.587785f, 0.425325f),
+    floatArrayOf(-0.681718f, -0.147621f, 0.716567f),
+    floatArrayOf(-0.442863f, -0.238856f, 0.864188f),
+    floatArrayOf(-0.587785f, -0.425325f, 0.688191f),
+    floatArrayOf(-0.309017f, -0.500000f, 0.809017f),
+    floatArrayOf(-0.147621f, -0.716567f, 0.681718f),
+    floatArrayOf(-0.425325f, -0.688191f, 0.587785f),
+    floatArrayOf(-0.162460f, -0.262866f, 0.951056f),
+    floatArrayOf(0.442863f, -0.238856f, 0.864188f),
+    floatArrayOf(0.162460f, -0.262866f, 0.951056f),
+    floatArrayOf(0.309017f, -0.500000f, 0.809017f),
+    floatArrayOf(0.147621f, -0.716567f, 0.681718f),
+    floatArrayOf(0.000000f, -0.525731f, 0.850651f),
+    floatArrayOf(0.425325f, -0.688191f, 0.587785f),
+    floatArrayOf(0.587785f, -0.425325f, 0.688191f),
+    floatArrayOf(0.688191f, -0.587785f, 0.425325f),
+    floatArrayOf(-0.955423f, 0.295242f, 0.000000f),
+    floatArrayOf(-0.951056f, 0.162460f, 0.262866f),
+    floatArrayOf(-1.000000f, 0.000000f, 0.000000f),
+    floatArrayOf(-0.850651f, 0.000000f, 0.525731f),
+    floatArrayOf(-0.955423f, -0.295242f, 0.000000f),
+    floatArrayOf(-0.951056f, -0.162460f, 0.262866f),
+    floatArrayOf(-0.864188f, 0.442863f, -0.238856f),
+    floatArrayOf(-0.951056f, 0.162460f, -0.262866f),
+    floatArrayOf(-0.809017f, 0.309017f, -0.500000f),
+    floatArrayOf(-0.864188f, -0.442863f, -0.238856f),
+    floatArrayOf(-0.951056f, -0.162460f, -0.262866f),
+    floatArrayOf(-0.809017f, -0.309017f, -0.500000f),
+    floatArrayOf(-0.681718f, 0.147621f, -0.716567f),
+    floatArrayOf(-0.681718f, -0.147621f, -0.716567f),
+    floatArrayOf(-0.850651f, 0.000000f, -0.525731f),
+    floatArrayOf(-0.688191f, 0.587785f, -0.425325f),
+    floatArrayOf(-0.587785f, 0.425325f, -0.688191f),
+    floatArrayOf(-0.425325f, 0.688191f, -0.587785f),
+    floatArrayOf(-0.425325f, -0.688191f, -0.587785f),
+    floatArrayOf(-0.587785f, -0.425325f, -0.688191f),
+    floatArrayOf(-0.688191f, -0.587785f, -0.425325f)
+)
+
 

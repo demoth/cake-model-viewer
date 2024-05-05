@@ -12,7 +12,6 @@ import com.badlogic.gdx.graphics.g3d.loader.G3dModelLoader
 import com.badlogic.gdx.graphics.g3d.loader.ObjLoader
 import com.badlogic.gdx.graphics.g3d.model.Node
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController
-import com.badlogic.gdx.graphics.g3d.utils.MeshBuilder
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder
 import com.badlogic.gdx.utils.UBJsonReader
 import ktx.graphics.use
@@ -109,17 +108,24 @@ class CakeModelViewer : ApplicationAdapter() {
 
         // put all vertices of the 1st frame into the buffer
         val frame = md2Model.frames.first()!!
-        val vertexBuffer = frame.points.flatMap { listOf(it.x * frame.scale[0], it.z * frame.scale[2], it.y * frame.scale[1]) }.toFloatArray()
-        val vertexIndices: ShortArray = createVertexIndices(md2Model, frame)
+        val vertexBuffer = frame.points.flatMap { listOf(
+            it.x * frame.scale[0],
+            it.y * frame.scale[1],
+            it.z * frame.scale[2],
+            VERTEXNORMALS[it.normalIndex][0],
+            VERTEXNORMALS[it.normalIndex][1],
+            VERTEXNORMALS[it.normalIndex][2],
+        ) }.toFloatArray()
+        val vertexIndices: ShortArray = createVertexIndices(md2Model)
         val modelBuilder = ModelBuilder()
         modelBuilder.begin()
-        val meshBuilder = modelBuilder.part("part1", GL_TRIANGLES, Usage.Position.toLong(), Material(ColorAttribute.createDiffuse(Color.GREEN)))
+        val meshBuilder = modelBuilder.part("part1", GL_TRIANGLES, VertexAttributes(VertexAttribute.Position(), VertexAttribute.Normal()), Material(ColorAttribute.createDiffuse(Color.GREEN)))
         meshBuilder.addMesh(vertexBuffer, vertexIndices)
         val model = modelBuilder.end()
         return ModelInstance(model)
     }
 
-    private fun createVertexIndices(model: Md2Model, frame: Md2Frame): ShortArray {
+    private fun createVertexIndices(model: Md2Model): ShortArray {
         var glCmdIndex = 0 // todo: use queue to pop elements instead of using mutable index?
         val result = mutableListOf<Short>()
         while (true) {
