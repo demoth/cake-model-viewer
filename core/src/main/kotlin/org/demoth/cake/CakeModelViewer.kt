@@ -112,14 +112,15 @@ class CakeModelViewer : ApplicationAdapter() {
             it.x * frame.scale[0],
             it.y * frame.scale[1],
             it.z * frame.scale[2],
-            VERTEXNORMALS[it.normalIndex][0],
-            VERTEXNORMALS[it.normalIndex][1],
-            VERTEXNORMALS[it.normalIndex][2],
+            // normals aren't actually used for rendering in q2
+//            VERTEXNORMALS[it.normalIndex][0],
+//            VERTEXNORMALS[it.normalIndex][1],
+//            VERTEXNORMALS[it.normalIndex][2],
         ) }.toFloatArray()
         val vertexIndices: ShortArray = createVertexIndices(md2Model)
         val modelBuilder = ModelBuilder()
         modelBuilder.begin()
-        val meshBuilder = modelBuilder.part("part1", GL_TRIANGLES, VertexAttributes(VertexAttribute.Position(), VertexAttribute.Normal()), Material(ColorAttribute.createDiffuse(Color.GREEN)))
+        val meshBuilder = modelBuilder.part("part1", GL_TRIANGLES, VertexAttributes(VertexAttribute.Position()), Material(ColorAttribute.createDiffuse(Color.GREEN)))
         meshBuilder.addMesh(vertexBuffer, vertexIndices)
         val model = modelBuilder.end()
         return ModelInstance(model)
@@ -140,10 +141,18 @@ class CakeModelViewer : ApplicationAdapter() {
                     vertices.add(model.glCmds[i + 2])
                 }
                 // converting strips into separate triangles
+                var clockwise = false // when converting a triangle strip into a set of separate triangles, need to alternate the winding direction
                 vertices.windowed(3).forEach {
-                    result.add(it[0].toShort())
-                    result.add(it[1].toShort())
-                    result.add(it[2].toShort())
+                    if (clockwise) {
+                        result.add(it[0].toShort())
+                        result.add(it[1].toShort())
+                        result.add(it[2].toShort())
+                    } else {
+                        result.add(it[2].toShort())
+                        result.add(it[1].toShort())
+                        result.add(it[0].toShort())
+                    }
+                    clockwise = !clockwise
                 }
                 numOfPoints * 3
             } else {
@@ -153,9 +162,9 @@ class CakeModelViewer : ApplicationAdapter() {
                     vertices.add(model.glCmds[i + 2])
                 }
                 convertStripToTriangles(vertices).windowed(3).forEach {
-                    result.add(it[0].toShort())
-                    result.add(it[1].toShort())
                     result.add(it[2].toShort())
+                    result.add(it[1].toShort())
+                    result.add(it[0].toShort())
                 }
                 (-numOfPoints * 3)
             }
@@ -177,7 +186,7 @@ class CakeModelViewer : ApplicationAdapter() {
 
     fun readMd2Model(): Md2Model {
         val byteBuffer = ByteBuffer
-            .wrap(Gdx.files.internal("adrenaline-model.md2").readBytes())
+            .wrap(Gdx.files.internal("tris.md2").readBytes())
             .order(ByteOrder.LITTLE_ENDIAN)
         return Md2Model(byteBuffer, "her")
     }
