@@ -8,6 +8,8 @@ import com.badlogic.gdx.graphics.VertexAttributes.Usage
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g3d.*
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute
+import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute
+import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight
 import com.badlogic.gdx.graphics.g3d.loader.G3dModelLoader
 import com.badlogic.gdx.graphics.g3d.loader.ObjLoader
 import com.badlogic.gdx.graphics.g3d.model.Node
@@ -15,6 +17,7 @@ import com.badlogic.gdx.graphics.g3d.utils.CameraInputController
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder
 import com.badlogic.gdx.utils.UBJsonReader
 import ktx.graphics.use
+import java.lang.Float.intBitsToFloat
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -49,7 +52,8 @@ class CakeModelViewer : ApplicationAdapter() {
         )
 
         environment = Environment()
-        environment.set(ColorAttribute(ColorAttribute.AmbientLight, 0.8f, 0.8f, 0.8f, 1f))
+//        environment.set(ColorAttribute(ColorAttribute.AmbientLight, 0.8f, 0.8f, 0.8f, 1f))
+        environment.add(DirectionalLight().set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f))
     }
 
     /**
@@ -59,7 +63,10 @@ class CakeModelViewer : ApplicationAdapter() {
         val modelBuilder = ModelBuilder()
         val box = modelBuilder.createBox(
             2f, 2f, 2f,
-            Material(ColorAttribute.createDiffuse(Color.BLUE)),
+            Material(
+                ColorAttribute.createDiffuse(Color.BLUE)
+//                todo: add texture and check coords
+            ),
             (Usage.Position or Usage.Normal).toLong()
         )
         return box
@@ -107,20 +114,34 @@ class CakeModelViewer : ApplicationAdapter() {
         val md2Model: Md2Model = readMd2Model()
 
         // put all vertices of the 1st frame into the buffer
+        val vertexIndices: ShortArray = createVertexIndices(md2Model)
+
         val frame = md2Model.frames.first()!!
-        val vertexBuffer = frame.points.flatMap { listOf(
+
+        val vertexBuffer = frame.points.flatMapIndexed { i, it -> listOf(
             it.x * frame.scale[0],
             it.y * frame.scale[1],
             it.z * frame.scale[2],
+            md2Model.textureCoords[i]?.first!!,
+            md2Model.textureCoords[i]?.second!!,
             // normals aren't actually used for rendering in q2
 //            VERTEXNORMALS[it.normalIndex][0],
 //            VERTEXNORMALS[it.normalIndex][1],
 //            VERTEXNORMALS[it.normalIndex][2],
         ) }.toFloatArray()
-        val vertexIndices: ShortArray = createVertexIndices(md2Model)
+
+
         val modelBuilder = ModelBuilder()
         modelBuilder.begin()
-        val meshBuilder = modelBuilder.part("part1", GL_TRIANGLES, VertexAttributes(VertexAttribute.Position()), Material(ColorAttribute.createDiffuse(Color.GREEN)))
+        val meshBuilder = modelBuilder.part(
+            "part1",
+            GL_TRIANGLES,
+            VertexAttributes(VertexAttribute.Position(), VertexAttribute.TexCoords(0)),
+            Material(
+//                ColorAttribute.createDiffuse(Color.GREEN),
+                TextureAttribute(TextureAttribute.Diffuse, Texture(Gdx.files.internal("pain.png")))
+            )
+        )
         meshBuilder.addMesh(vertexBuffer, vertexIndices)
         val model = modelBuilder.end()
         return ModelInstance(model)
@@ -138,7 +159,11 @@ class CakeModelViewer : ApplicationAdapter() {
                 // triangle strip
                 val vertices = mutableListOf<Int>()
                 for (i in glCmdIndex until (glCmdIndex + numOfPoints * 3) step 3) {
-                    vertices.add(model.glCmds[i + 2])
+                    val s = intBitsToFloat(model.glCmds[i + 0])
+                    val t = intBitsToFloat(model.glCmds[i + 1])
+                    val vertexIndex = model.glCmds[i + 2]
+                    model.textureCoords[vertexIndex] = s to t
+                    vertices.add(vertexIndex)
                 }
                 // converting strips into separate triangles
                 var clockwise = false // when converting a triangle strip into a set of separate triangles, need to alternate the winding direction
@@ -159,6 +184,10 @@ class CakeModelViewer : ApplicationAdapter() {
                 // triangle fan
                 val vertices = mutableListOf<Int>()
                 for (i in glCmdIndex until (glCmdIndex - numOfPoints * 3) step 3) {
+                    val s = intBitsToFloat(model.glCmds[i + 0])
+                    val t = intBitsToFloat(model.glCmds[i + 1])
+                    val vertexIndex = model.glCmds[i + 2]
+                    model.textureCoords[vertexIndex] = s to t
                     vertices.add(model.glCmds[i + 2])
                 }
                 convertStripToTriangles(vertices).windowed(3).forEach {
@@ -170,6 +199,9 @@ class CakeModelViewer : ApplicationAdapter() {
             }
 
         }
+
+
+
         return result.toShortArray()
     }
 

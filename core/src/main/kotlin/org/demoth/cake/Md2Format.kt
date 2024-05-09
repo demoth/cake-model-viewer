@@ -7,7 +7,24 @@ import java.nio.ByteBuffer
  * A frame in the MD2 model
  */
 
-data class Point(val x: Int, val y: Int, val z: Int, val normalIndex: Int)
+data class Point(
+    val x: Int,
+    val y: Int,
+    val z: Int,
+    val normalIndex: Int)
+
+/**
+ * Header:
+ *  gl cmd: +3, s1 t1 i1, s2 t2 i2, s3 t3 i3,
+ *          -5 i1 i2 i3 i4 i5
+ *   * ---- *
+ *   |\     |
+ *   | \    |
+ *   |  \   |
+ *   |   \  |
+ *   |    \ |
+ *   * ---- *
+ */
 
 class Md2Frame(buffer: ByteBuffer, num_xyz: Int) {
     var scale = floatArrayOf(0f, 0f, 0f) // multiply byte verts by this
@@ -91,6 +108,8 @@ class Md2Model(b: ByteBuffer) {
 
     // all frames have vertex array of equal size (num_xyz)
     var frames: Array<Md2Frame?> = arrayOf()
+
+    val textureCoords = mutableMapOf<Int, Pair<Float, Float>>()
 
     constructor(b: ByteBuffer, modelName: String) : this(b) {
         loadBody(b)
