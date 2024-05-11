@@ -114,22 +114,7 @@ class CakeModelViewer : ApplicationAdapter() {
         val md2Model: Md2Model = readMd2Model()
 
         // put all vertices of the 1st frame into the buffer
-        val vertexIndices: ShortArray = createVertexIndices(md2Model)
-
-        val frame = md2Model.frames.first()!!
-
-        val vertexBuffer = frame.points.flatMapIndexed { i, it -> listOf(
-            it.x * frame.scale[0],
-            it.y * frame.scale[1],
-            it.z * frame.scale[2],
-            md2Model.textureCoords[i]?.first!!,
-            md2Model.textureCoords[i]?.second!!,
-            // normals aren't actually used for rendering in q2
-//            VERTEXNORMALS[it.normalIndex][0],
-//            VERTEXNORMALS[it.normalIndex][1],
-//            VERTEXNORMALS[it.normalIndex][2],
-        ) }.toFloatArray()
-
+        val (vertexIndices, vertexBuffer) = createVertexIndices(md2Model, 1)
 
         val modelBuilder = ModelBuilder()
         modelBuilder.begin()
@@ -147,9 +132,29 @@ class CakeModelViewer : ApplicationAdapter() {
         return ModelInstance(model)
     }
 
-    private fun createVertexIndices(model: Md2Model): ShortArray {
+    internal data class VertexInfo(val positionIndex: Int, val s: Float, val t: Float)
+    internal data class VertexFullInfo(val x: Float, val y: Float, val z: Float, val s: Float, val t: Float)
+
+    private fun convert(info: VertexInfo, positions: Array<Point>, frame: Md2Frame): VertexFullInfo {
+        val position = positions[info.positionIndex]
+        return VertexFullInfo(
+            x = position.x * frame.scale[0],
+            y = position.y * frame.scale[1],
+            z = position.z * frame.scale[2],
+            s = info.s,
+            t = info.t
+        )
+
+    }
+
+    private fun createVertexIndices(model: Md2Model, frameIndex: Int): Pair<ShortArray, FloatArray> {
         var glCmdIndex = 0 // todo: use queue to pop elements instead of using mutable index?
-        val result = mutableListOf<Short>()
+
+        val frame = model.frames[frameIndex]!!
+        val vertexPositions = frame.points
+
+        val result = mutableListOf<VertexFullInfo>()
+
         while (true) {
             val numOfPoints = model.glCmds[glCmdIndex]
             glCmdIndex++
@@ -157,56 +162,52 @@ class CakeModelViewer : ApplicationAdapter() {
                 break
             } else if (numOfPoints >= 0) {
                 // triangle strip
-                val vertices = mutableListOf<Int>()
+                val vertices = mutableListOf<VertexInfo>()
                 for (i in glCmdIndex until (glCmdIndex + numOfPoints * 3) step 3) {
                     val s = intBitsToFloat(model.glCmds[i + 0])
                     val t = intBitsToFloat(model.glCmds[i + 1])
                     val vertexIndex = model.glCmds[i + 2]
-                    model.textureCoords[vertexIndex] = s to t
-                    vertices.add(vertexIndex)
+                    vertices.add(VertexInfo(vertexIndex, s ,t))
                 }
                 // converting strips into separate triangles
                 var clockwise = false // when converting a triangle strip into a set of separate triangles, need to alternate the winding direction
                 vertices.windowed(3).forEach {
                     if (clockwise) {
-                        result.add(it[0].toShort())
-                        result.add(it[1].toShort())
-                        result.add(it[2].toShort())
+                        result.add(convert(it[0], vertexPositions, frame))
+                        result.add(convert(it[1], vertexPositions, frame))
+                        result.add(convert(it[2], vertexPositions, frame))
                     } else {
-                        result.add(it[2].toShort())
-                        result.add(it[1].toShort())
-                        result.add(it[0].toShort())
+                        result.add(convert(it[2], vertexPositions, frame))
+                        result.add(convert(it[1], vertexPositions, frame))
+                        result.add(convert(it[0], vertexPositions, frame))
                     }
                     clockwise = !clockwise
                 }
                 numOfPoints * 3
             } else {
                 // triangle fan
-                val vertices = mutableListOf<Int>()
+                val vertices = mutableListOf<VertexInfo>()
                 for (i in glCmdIndex until (glCmdIndex - numOfPoints * 3) step 3) {
                     val s = intBitsToFloat(model.glCmds[i + 0])
                     val t = intBitsToFloat(model.glCmds[i + 1])
                     val vertexIndex = model.glCmds[i + 2]
-                    model.textureCoords[vertexIndex] = s to t
-                    vertices.add(model.glCmds[i + 2])
+                    vertices.add(VertexInfo(vertexIndex, s, t))
                 }
                 convertStripToTriangles(vertices).windowed(3).forEach {
-                    result.add(it[2].toShort())
-                    result.add(it[1].toShort())
-                    result.add(it[0].toShort())
+                    result.add(convert(it[2], vertexPositions, frame))
+                    result.add(convert(it[1], vertexPositions, frame))
+                    result.add(convert(it[0], vertexPositions, frame))
                 }
                 (-numOfPoints * 3)
             }
 
         }
 
-
-
-        return result.toShortArray()
+        return result.indices.map { it.toShort() }.toShortArray() to result.flatMap { listOf(it.x, it.y, it.z, it.s, it.t) }.toFloatArray()
     }
 
-    private fun convertStripToTriangles(vertices: List<Int>): List<Int> {
-        val result = mutableListOf<Int>()
+    private fun convertStripToTriangles(vertices: List<VertexInfo>): List<VertexInfo> {
+        val result = mutableListOf<VertexInfo>()
         vertices.drop(1).windowed(2).forEach {
             result.add(vertices.first())
             result.add(it.first())
@@ -214,7 +215,6 @@ class CakeModelViewer : ApplicationAdapter() {
         }
         return result
     }
-
 
     fun readMd2Model(): Md2Model {
         val byteBuffer = ByteBuffer

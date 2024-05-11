@@ -109,8 +109,6 @@ class Md2Model(b: ByteBuffer) {
     // all frames have vertex array of equal size (num_xyz)
     var frames: Array<Md2Frame?> = arrayOf()
 
-    val textureCoords = mutableMapOf<Int, Pair<Float, Float>>()
-
     constructor(b: ByteBuffer, modelName: String) : this(b) {
         loadBody(b)
     }
